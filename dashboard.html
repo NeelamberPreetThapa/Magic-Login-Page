@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Welcome Page</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+  <h1 id="status">Checking your subscription status...</h1>
+
+  <script>
+    const { createClient } = supabase;
+    const SUPABASE_URL = "https://ebakqsyqiqreemlgkhmv.supabase.co"; // Replace with your Supabase URL
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViYWtxc3lxaXFyZWVtbGdraG12Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM2ODQ0NjAsImV4cCI6MjA1OTI2MDQ2MH0.2yp49L210Zec8DfSkI95UI5TrTuN1D7MkhaJs8Kdaq4"; // Replace with your Supabase anon key
+
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function checkSubscription() {
+      const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+
+      if (!session || !session.user) {
+        document.getElementById("status").innerText = "Not logged in.";
+        return;
+      }
+
+      const userId = session.user.id;
+
+      const { data, error } = await supabaseClient
+        .from("users")
+        .select("has_paid")
+        .eq("id", userId)
+        .single();
+
+      if (error) {
+        console.error("DB error:", error);
+        document.getElementById("status").innerText = "Error checking payment.";
+        return;
+      }
+
+      if (data?.has_paid) {
+        document.getElementById("status").innerText = "✅ Welcome! You have an active subscription.";
+        // You can also redirect to your premium page here
+        // window.location.href = '/premium.html';
+      } else {
+        document.getElementById("status").innerHTML = `
+          ❌ You don't have an active subscription.<br>
+          <a href="https://your-paddle-checkout-link.com?email=${session.user.email}">
+            <button>Subscribe via Paddle</button>
+          </a>`;
+      }
+    }
+
+    checkSubscription();
+  </script>
+</body>
+</html>
